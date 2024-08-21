@@ -32,9 +32,6 @@ public class UserDto {
 
     private List<String> roleNames;
 
-    private List<String> allRoles;
-
-
 
     public static UserDto toDto(User user) {
         UserDto userDto = new UserDto();
@@ -45,10 +42,6 @@ public class UserDto {
         userDto.setPassword(user.getPassword());
         userDto.setAge(user.getAge());
         userDto.setRoleNames(user.getRoles().stream()
-                .map(Role::getName)
-                .map(s->s.replace("ROLE_", ""))
-                .collect(Collectors.toList()));
-        userDto.setAllRoles(roleService.findAll().stream()
                 .map(Role::getName)
                 .map(s->s.replace("ROLE_", ""))
                 .collect(Collectors.toList()));
@@ -65,7 +58,6 @@ public class UserDto {
         user.setAge(userDto.getAge());
         List<Role> roles = userDto.getRoleNames().stream()
                 .map(s -> "ROLE_" + s)
-                .peek(System.out::println)
                 .map(s -> roleService.findRoleByName(s))
                 .collect(Collectors.toList());
         user.setRoles(roles);

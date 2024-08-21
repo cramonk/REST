@@ -3,11 +3,14 @@ package ru.cramonk.spring.rest.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.cramonk.spring.rest.dto.UserDto;
+import ru.cramonk.spring.rest.entity.Role;
 import ru.cramonk.spring.rest.entity.User;
 import ru.cramonk.spring.rest.error_handle.DuplicateEmailException;
 import ru.cramonk.spring.rest.error_handle.UserNotFoundException;
+import ru.cramonk.spring.rest.service.RoleService;
 import ru.cramonk.spring.rest.service.UserService;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,9 +19,11 @@ import java.util.stream.Collectors;
 public class AdminRestController {
 
     private final UserService userService;
+    private final RoleService roleService;
 
-    public AdminRestController(UserService userService) {
+    public AdminRestController(UserService userService, RoleService roleService) {
         this.userService = userService;
+        this.roleService = roleService;
     }
 
     @GetMapping
@@ -69,6 +74,27 @@ public class AdminRestController {
         } else {
             userService.deleteById(id);
             return ResponseEntity.ok(String.format("User with id %s was deleted", id));
+        }
+    }
+
+    @GetMapping("/roles")
+    public ResponseEntity<List<String>> getAllRoles() {
+        List<String> all = roleService.findAll().stream()
+                .map(Role::getName)
+                .map(s->s.replace("ROLE_", ""))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(all);
+
+    }
+
+
+    @GetMapping("/current_user")
+    public ResponseEntity<UserDto> getUser(Principal principal) {
+        User user = userService.findByUsername(principal.getName());
+        if (user == null) {
+            throw new UserNotFoundException("User was not found");
+        } else {
+            return ResponseEntity.ok(UserDto.toDto(user));
         }
     }
 }

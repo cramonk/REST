@@ -1,11 +1,12 @@
 $(document).ready(function () {
     getUsers();
+    getCurrentUserInfo();
 
     $(document).on("click", ".btn-edit", e => editModalShow(e));
 
     $(document).on("click", ".btn-delete", e => deleteModalShow(e));
 
-    newUserTab.click(e => newUserTabForm(e));
+    newUserTab.click(() => newUserTabForm());
 
     submitPost.click(e => newPost(e));
 
@@ -30,6 +31,24 @@ const userTableTab = $("#user_table-tab");
 const newUserForm = $("#new_user_form")
 const formEdit = $("#form_edit");
 const formDelete = $("#form_delete");
+
+const currentUserTableBody = $(".user_table_body");
+
+// GET to http://localhost:8080/rest/admin/users/current_user
+async function getCurrentUserInfo() {
+    let resp = await fetch(url+"/current_user");
+    let tagsBody = "";
+    let user = await resp.json();
+    tagsBody += `<tr>
+                <td>${user.id}</td>
+                <td>${user.firstName}</td>
+                <td>${user.lastName}</td>
+                <td>${user.age}</td>
+                <td>${user.email}</td>
+                <td>${user.roleNames.toString().replace(",", " ")}</td>
+            </tr>`;
+    currentUserTableBody.html(tagsBody);
+}
 
 // GET to http://localhost:8080/rest/admin/users
 async function getUsers() {
@@ -116,7 +135,6 @@ async function newPost(event) {
     }
     userTableTab.tab('show');
     userTableBody.append(addRowToUserTable(newUser));
-
 }
 
 // DELETE to http://localhost:8080/rest/admin/users/{id}
@@ -139,10 +157,14 @@ async function deletePost(event) {
 
 
 
-function editModalShow(event) {
+async function editModalShow(event) {
     let id = event.target.id.replace("edit", "");
     let tags = "";
-    $.getJSON(url + "/" + id, user => {
+    let allRoles;
+    await $.getJSON(url + "/roles", json => {
+        allRoles = json.map(c => `<option  value="${c}" th:name="${c}">${c}</option>`);
+    });
+    await $.getJSON(url + "/" + id, user => {
         tags += `<div class="row">
                             <span style="display:none; color: red" id="edit_method_error"></span><br>
                             <label for="edit_id" class="form-label fw-bold">Id</label>
@@ -176,8 +198,7 @@ function editModalShow(event) {
                       <div class="row">
                             <label for="edit_roles" class="form-label fw-bold">Role</label>
                             <select name ="${user.roleNames}" size="2" id="edit_roles" required multiple>
-                                <option  value="${user.allRoles[0]}" th:name="${user.allRoles[0]}">${user.allRoles[0]}</option>
-                                <option  value="${user.allRoles[1]}" th:name="${user.allRoles[1]}">${user.allRoles[1]}</option>
+                                ${allRoles}
                             </select>
                             <span id="edit_roles_error" style="display:none; color: red"></span><br>
                       </div>`
@@ -187,10 +208,14 @@ function editModalShow(event) {
 
 }
 
-function deleteModalShow(event) {
+async function deleteModalShow(event) {
     let id = event.target.id.replace("delete", "");
     let tags = "";
-    $.getJSON(url + "/" + id, user => {
+    let allRoles;
+    await $.getJSON(url + "/roles", json => {
+        allRoles = json.map(c => `<option  value="${c}" th:name="${c}">${c}</option>`);
+    });
+    await $.getJSON(url + "/" + id, user => {
         tags += `<div class="row">
                         <label for="delete_id" class="form-label fw-bold">Id</label>
                         <input type="text" th:name="id" value="${user.id}" class="form-control  h-50" disabled id="delete_id" placeholder="${user.id}">
@@ -218,24 +243,20 @@ function deleteModalShow(event) {
                   <div class="row">
                         <label for="delete_roles" class="form-label fw-bold disabled">Role</label>
                         <select disabled style="background-color: #e1e1e1" name ="${user.roleNames}" size="2" id="delete_roles" >
-                            <option disabled value="${user.allRoles[0]}" th:name="${user.allRoles[0]}">${user.allRoles[0]}</option>
-                            <option disabled value="${user.allRoles[1]}" th:name="${user.allRoles[1]}">${user.allRoles[1]}</option>
+                            ${allRoles}
                         </select>
                   </div>`
         formDelete.html(tags);
         deleteModal.modal('show');
     });
-
 }
 
-async function newUserTabForm(event) {
-    let id = event.target.id.replace("new_user-tab", "");
+async function newUserTabForm() {
     let tags = "";
     let allRoles;
-    await $.getJSON(url + "/" + id, json => {
-        allRoles = json.allRoles;
+    await $.getJSON(url + "/roles", json => {
+        allRoles = json.map(c => `<option  value="${c}" th:name="${c}">${c}</option>`);
     });
-
     tags += `<div class="row">
                             <span style="display:none; color: red" id="new_user_method_error"></span><br>
                             <label for="new_user_first_name" class="form-label fw-bold">First name</label>
@@ -265,8 +286,7 @@ async function newUserTabForm(event) {
                       <div class="row">
                             <label for="new_user_roles" class="form-label fw-bold">Role</label>
                             <select name ="" size="2" id="new_user_roles" required multiple>
-                                <option  value="${allRoles[0]}" th:name="${allRoles[0]}">${allRoles[0]}</option>
-                                <option  value="${allRoles[1]}" th:name="${allRoles[1]}">${allRoles[1]}</option>
+                            ${allRoles}
                             </select>
                             <span id="new_user_roles_error" style="display:none; color: red"></span><br>
                       </div>`;
